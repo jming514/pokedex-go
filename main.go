@@ -21,20 +21,20 @@ type pokedexLocation struct {
 }
 
 type config struct {
-	Next     string
-	Previous string
+	Next     *string
+	Previous *string
 }
 
-var location = map[string]string{
-	"Next":     "",
-	"Previous": "",
+var location = config{
+	Next:     nil,
+	Previous: nil,
 }
 
 func getMap() {
 	locationUrl := "https://pokeapi.co/api/v2/location/"
 
-	if location["Next"] != "" {
-		locationUrl = location["Next"]
+	if location.Next != nil {
+		locationUrl = *location.Next
 	}
 
 	res, err := http.Get(locationUrl)
@@ -55,8 +55,8 @@ func getMap() {
 	}
 	res.Body.Close()
 
-	location["Next"] = t.Next
-	location["Previous"] = t.Previous
+	location.Next = &t.Next
+	location.Previous = &t.Previous
 
 	for _, v := range t.Results {
 		fmt.Println(v.Name)
