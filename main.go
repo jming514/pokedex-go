@@ -25,8 +25,19 @@ type config struct {
 	Previous string
 }
 
-func (c config) getMap() {
-	res, err := http.Get("https://pokeapi.co/api/v2/location/")
+var location = map[string]string{
+	"Next":     "",
+	"Previous": "",
+}
+
+func getMap() {
+	locationUrl := "https://pokeapi.co/api/v2/location/"
+
+	if location["Next"] != "" {
+		locationUrl = location["Next"]
+	}
+
+	res, err := http.Get(locationUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,20 +55,15 @@ func (c config) getMap() {
 	}
 	res.Body.Close()
 
-	location = config{
-		Next:     t.Next,
-		Previous: t.Previous,
-	}
+	location["Next"] = t.Next
+	location["Previous"] = t.Previous
 
-	fmt.Println("location", location)
+	for _, v := range t.Results {
+		fmt.Println(v.Name)
+	}
 }
 
 var prompt string = "Pokedex > "
-
-var location config = config{
-	Next:     "",
-	Previous: "",
-}
 
 func main() {
 	input := bufio.NewScanner(os.Stdin)
@@ -71,7 +77,7 @@ func main() {
 			os.Exit(3)
 
 		case "map":
-			location.getMap()
+			getMap()
 
 		case "help":
 			fmt.Println("command\tdescription\nhelp\tprint out all commands\nexit\tclose the program")
