@@ -6,6 +6,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+
+	cache "github.com/jming514/pokedex-go/internal/pokecache"
 )
 
 type pokedexLocation struct {
@@ -23,7 +25,7 @@ type config struct {
 	Previous *string
 }
 
-var location = &config{
+var Location = &config{
 	Next:     nil,
 	Previous: nil,
 }
@@ -32,63 +34,79 @@ func random() {
 	fmt.Println("This is something random")
 }
 
-func (cfg *config) setNextPrev(res *http.Response) error {
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Fatal(err)
+var locationUrl = "https://pokeapi.co/api/v2/location/"
+
+func (cfg *config) GetMap() {
+	apiUrl := locationUrl
+	if cfg.Next != nil {
+		apiUrl = *cfg.Next
 	}
 
+	val, ok := cache.MyCache.Get(apiUrl)
+	if ok {
+		cfg.saveLocationToCache(val, apiUrl)
+	} else {
+		res, err := http.Get(apiUrl)
+		if err != nil {
+			log.Fatal(err)
+		}
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		cfg.saveLocationToCache(body, apiUrl)
+
+		err = res.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func (cfg *config) GetMapb() {
+	apiUrl := locationUrl
+	if cfg.Previous == nil {
+		fmt.Println("There is no previous")
+		return
+	}
+
+	apiUrl = *cfg.Previous
+
+	val, ok := cache.MyCache.Get(apiUrl)
+	if ok {
+		cfg.saveLocationToCache(val, apiUrl)
+	} else {
+		res, err := http.Get(apiUrl)
+		if err != nil {
+			log.Fatal(err)
+		}
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		cfg.saveLocationToCache(body, apiUrl)
+
+		err = res.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func (cfg *config) saveLocationToCache(val []byte, key string) {
 	pl := pokedexLocation{}
-
-	err = json.Unmarshal(body, &pl)
+	err := json.Unmarshal(val, &pl)
 	if err != nil {
 		log.Fatal(err)
-	}
-	err = res.Body.Close()
-	if err != nil {
-		return err
 	}
 
 	cfg.Next = &pl.Next
 	cfg.Previous = &pl.Previous
+	cache.MyCache.Add(key, val)
 
 	for _, v := range pl.Results {
-		fmt.Println(v.Name)
-	}
-
-	return nil
-}
-
-func GetMap() {
-	locationUrl := "https://pokeapi.co/api/v2/location/"
-	if location.Next != nil {
-		locationUrl = *location.Next
-	}
-
-	res, err := http.Get(locationUrl)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = location.setNextPrev(res)
-	if err != nil {
-		log.Println(err)
-	}
-}
-
-func GetMapb() {
-	locationUrl := "https://pokeapi.co/api/v2/location/"
-	if location.Previous != nil {
-		locationUrl = *location.Previous
-	}
-
-	res, err := http.Get(locationUrl)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = location.setNextPrev(res)
-	if err != nil {
-		log.Println(err)
+		fmt.Printf("%v\n", v.Name)
 	}
 }
