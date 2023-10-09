@@ -24,16 +24,7 @@ func NewCache(interval time.Duration) *Cache {
 		c:   make(map[string]cacheEntry),
 	}
 
-	tickerChan := make(chan bool)
-
-	go func() {
-		for {
-			select {
-			case <-tickerChan:
-				cache.reapLoop(interval)
-			}
-		}
-	}()
+	go cache.reapLoop()
 
 	return &cache
 }
@@ -65,14 +56,19 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 	return nil, false
 }
 
-func (c *Cache) reapLoop(interval time.Duration) {
-	c.mux.Lock()
-	defer c.mux.Unlock()
+func (c *Cache) reapLoop() {
+	interval := 5 * time.Minute
 
-	for k, v := range c.c {
-		lifetime := time.Now().Sub(v.createdAt)
-		if lifetime >= interval {
-			delete(c.c, k)
+	for {
+		c.mux.Lock()
+		for k, v := range c.c {
+			lifetime := time.Now().Sub(v.createdAt)
+			if lifetime >= interval {
+				delete(c.c, k)
+			}
 		}
+		defer c.mux.Unlock()
+
+		time.Sleep(interval)
 	}
 }

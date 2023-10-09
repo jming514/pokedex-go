@@ -23,7 +23,7 @@ type config struct {
 	Previous *string
 }
 
-var location = config{
+var location = &config{
 	Next:     nil,
 	Previous: nil,
 }
@@ -32,9 +32,35 @@ func random() {
 	fmt.Println("This is something random")
 }
 
+func (cfg *config) setNextPrev(res *http.Response) error {
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	pl := pokedexLocation{}
+
+	err = json.Unmarshal(body, &pl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = res.Body.Close()
+	if err != nil {
+		return err
+	}
+
+	cfg.Next = &pl.Next
+	cfg.Previous = &pl.Previous
+
+	for _, v := range pl.Results {
+		fmt.Println(v.Name)
+	}
+
+	return nil
+}
+
 func GetMap() {
 	locationUrl := "https://pokeapi.co/api/v2/location/"
-
 	if location.Next != nil {
 		locationUrl = *location.Next
 	}
@@ -44,36 +70,16 @@ func GetMap() {
 		log.Fatal(err)
 	}
 
-	body, err := io.ReadAll(res.Body)
+	err = location.setNextPrev(res)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	t := pokedexLocation{}
-
-	err = json.Unmarshal(body, &t)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = res.Body.Close()
-	if err != nil {
-		return
-	}
-
-	location.Next = &t.Next
-	location.Previous = &t.Previous
-
-	for _, v := range t.Results {
-		fmt.Println(v.Name)
+		log.Println(err)
 	}
 }
 
 func GetMapb() {
 	locationUrl := "https://pokeapi.co/api/v2/location/"
 	if location.Previous != nil {
-		//if *location.Previous != "" {
 		locationUrl = *location.Previous
-		//}
 	}
 
 	res, err := http.Get(locationUrl)
@@ -81,26 +87,8 @@ func GetMapb() {
 		log.Fatal(err)
 	}
 
-	body, err := io.ReadAll(res.Body)
+	err = location.setNextPrev(res)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	t := pokedexLocation{}
-
-	err = json.Unmarshal(body, &t)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = res.Body.Close()
-	if err != nil {
-		return
-	}
-
-	location.Next = &t.Next
-	location.Previous = &t.Previous
-
-	for _, v := range t.Results {
-		fmt.Println(v.Name)
+		log.Println(err)
 	}
 }

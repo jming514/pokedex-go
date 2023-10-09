@@ -6,12 +6,14 @@ import (
 	"os"
 
 	"github.com/jming514/pokedex-go/internal/pokeapi"
+	cache "github.com/jming514/pokedex-go/internal/pokecache"
 )
 
 var prompt string = "Pokedex > "
 
 func main() {
 	input := bufio.NewScanner(os.Stdin)
+	myCache := cache.NewCache(5)
 
 	for {
 		fmt.Printf("%v", prompt)
