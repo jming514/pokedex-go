@@ -30,10 +30,6 @@ var Location = &config{
 	Previous: nil,
 }
 
-func random() {
-	fmt.Println("This is something random")
-}
-
 var locationUrl = "https://pokeapi.co/api/v2/location/"
 
 func (cfg *config) GetMap() {
