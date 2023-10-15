@@ -2,107 +2,40 @@ package pokeapi
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
-
-	cache "github.com/jming514/pokedex-go/internal/pokecache"
 )
-
-type pokedexLocation struct {
-	Next     string
-	Previous string
-	Results  []struct {
-		Name string
-		URL  string
-	}
-	Count int
-}
-
-type config struct {
-	Next     *string
-	Previous *string
-}
-
-var Location = &config{
-	Next:     nil,
-	Previous: nil,
-}
 
 var locationUrl = "https://pokeapi.co/api/v2/location/"
 
-func (cfg *config) GetMap() {
+func GetMap() (PokedexLocation, error) {
 	apiUrl := locationUrl
-	if cfg.Next != nil {
-		apiUrl = *cfg.Next
-	}
 
-	val, ok := cache.MyCache.Get(apiUrl)
-	if ok {
-		cfg.saveLocationToCache(val, apiUrl)
-	} else {
-		res, err := http.Get(apiUrl)
-		if err != nil {
-			log.Fatal(err)
-		}
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		cfg.saveLocationToCache(body, apiUrl)
-
-		err = res.Body.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func (cfg *config) GetMapb() {
-	apiUrl := locationUrl
-	if cfg.Previous == nil {
-		fmt.Println("There is no previous")
-		return
-	}
-
-	apiUrl = *cfg.Previous
-
-	val, ok := cache.MyCache.Get(apiUrl)
-	if ok {
-		cfg.saveLocationToCache(val, apiUrl)
-	} else {
-		res, err := http.Get(apiUrl)
-		if err != nil {
-			log.Fatal(err)
-		}
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		cfg.saveLocationToCache(body, apiUrl)
-
-		err = res.Body.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func (cfg *config) saveLocationToCache(val []byte, key string) {
-	pl := pokedexLocation{}
-	err := json.Unmarshal(val, &pl)
+	res, err := http.NewRequest("GET", apiUrl, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("error sending http request: %v\n", err)
+		return PokedexLocation{}, err
 	}
 
-	cfg.Next = &pl.Next
-	cfg.Previous = &pl.Previous
-	cache.MyCache.Add(key, val)
-
-	for _, v := range pl.Results {
-		fmt.Printf("%v\n", v.Name)
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Printf("error reading body: %v\n", err)
+		return PokedexLocation{}, err
 	}
+
+	err = res.Body.Close()
+	if err != nil {
+		log.Printf("error closing body: %v\n", err)
+		return PokedexLocation{}, err
+	}
+
+	locationResponse := PokedexLocation{}
+	err = json.Unmarshal(body, &locationResponse)
+	if err != nil {
+		log.Printf("cannot unmarshal: %v\n", err)
+		return PokedexLocation{}, err
+	}
+
+	return locationResponse, nil
 }

@@ -19,14 +19,14 @@ var interval = 5
 var MyCache = NewCache(time.Duration(interval))
 
 // NewCache create cache and reap every 5 minutes
-func NewCache(interval time.Duration) *Cache {
+func NewCache(interval time.Duration) Cache {
 	cache := Cache{
 		mux: &sync.RWMutex{},
 		c:   make(map[string]cacheEntry),
 	}
 	go cache.reapLoop(interval)
 
-	return &cache
+	return cache
 }
 
 // Add add an entry to cache
@@ -54,17 +54,21 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 }
 
 func (c *Cache) reapLoop(interval time.Duration) {
-	ttl := interval
+	ticker := time.NewTicker(interval)
 
-	for {
-		time.Sleep(ttl)
-		c.mux.Lock()
-		for k, v := range c.c {
-			lifetime := time.Now().Sub(v.createdAt)
-			if lifetime > ttl {
-				delete(c.c, k)
-			}
+	for range ticker.C {
+		c.reap(time.Now(), interval)
+	}
+}
+
+func (c *Cache) reap(now time.Time, ttl time.Duration) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	for k, v := range c.c {
+		lifetime := now.Sub(v.createdAt)
+		if lifetime > ttl {
+			delete(c.c, k)
 		}
-		c.mux.Unlock()
 	}
 }
