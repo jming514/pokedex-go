@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -14,9 +15,6 @@ type Cache struct {
 	mux *sync.RWMutex
 	c   map[string]cacheEntry
 }
-
-var interval = 5
-var MyCache = NewCache(time.Duration(interval))
 
 // NewCache create cache and reap every 5 minutes
 func NewCache(interval time.Duration) Cache {

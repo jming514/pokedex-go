@@ -3,15 +3,18 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/jming514/pokedex-go/internal/pokeapi"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/jming514/pokedex-go/internal/pokeapi"
+	"github.com/jming514/pokedex-go/internal/pokecache"
 )
 
 type cliCommand struct {
+	callback    func() error
 	name        string
 	description string
-	callback    func() error
 }
 
 type config struct {
@@ -30,7 +33,7 @@ func getCommands() map[string]cliCommand {
 		"map": {
 			name:        "map",
 			description: "move forward maps",
-			callback:    nil,
+			callback:    commandMap,
 		},
 		"mapb": {
 			name:        "mapb",
@@ -49,6 +52,8 @@ func getCommands() map[string]cliCommand {
 		},
 	}
 }
+
+var pokeCache = cache.NewCache(5 * time.Minute)
 
 func startRepl() {
 	reader := bufio.NewScanner(os.Stdin)

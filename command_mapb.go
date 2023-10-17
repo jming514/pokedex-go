@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func commandMap() error {
+func commandMapb() error {
 	locationUrl := "https://pokeapi.co/api/v2/location"
 
 	res, err := http.Get(locationUrl)
@@ -24,6 +24,5 @@ func commandMap() error {
 
 	log.Printf("location data: %v", string(body))
 	// save to cache
-	pokeCache.Add(locationUrl, body)
 	return nil
 }
