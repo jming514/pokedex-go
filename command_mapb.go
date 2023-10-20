@@ -1,15 +1,21 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/jming514/pokedex-go/internal/pokeapi"
 )
 
-func commandMapb() error {
-	locationUrl := "https://pokeapi.co/api/v2/location"
+func (cfg *config) commandMapb() error {
+	queryUrl := locationUrl
+	if cfg.prevLocationURL != nil {
+		queryUrl = *cfg.prevLocationURL
+	}
 
-	res, err := http.Get(locationUrl)
+	res, err := http.Get(queryUrl)
 	if err != nil {
 		log.Printf("error fetching location data: %v", err)
 		return err
@@ -22,7 +28,19 @@ func commandMapb() error {
 	}
 	defer res.Body.Close()
 
-	log.Printf("location data: %v", string(body))
-	// save to cache
+	data := pokeapi.PokedexLocation{}
+
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		log.Printf("error unmarshalling location data: %v", err)
+		return err
+	}
+
+	printResults(data.Results)
+
+	cfg.nextLocationURL = &data.Next
+	cfg.prevLocationURL = &data.Previous
+
+	cfg.pokeapiClient.C.Add(queryUrl, body)
 	return nil
 }

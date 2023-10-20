@@ -1,8 +1,9 @@
 package pokeapi
 
 import (
-	"github.com/jming514/pokedex-go/internal/pokecache"
 	"time"
+
+	cache "github.com/jming514/pokedex-go/internal/pokecache"
 )
 
 type Client struct {

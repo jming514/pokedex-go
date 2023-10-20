@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -13,14 +12,14 @@ type cacheEntry struct {
 
 type Cache struct {
 	mux *sync.RWMutex
-	c   map[string]cacheEntry
+	C   map[string]cacheEntry
 }
 
 // NewCache create cache and reap every 5 minutes
 func NewCache(interval time.Duration) Cache {
 	cache := Cache{
 		mux: &sync.RWMutex{},
-		c:   make(map[string]cacheEntry),
+		C:   make(map[string]cacheEntry),
 	}
 	go cache.reapLoop(interval)
 
@@ -36,7 +35,7 @@ func (c *Cache) Add(key string, val []byte) {
 		createdAt: time.Now(),
 		val:       val,
 	}
-	c.c[key] = newEntry
+	c.C[key] = newEntry
 }
 
 // Get get an entry from cache
@@ -44,7 +43,7 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	entry, ok := c.c[key]
+	entry, ok := c.C[key]
 	if !ok {
 		return nil, false
 	}
@@ -63,10 +62,10 @@ func (c *Cache) reap(now time.Time, ttl time.Duration) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	for k, v := range c.c {
+	for k, v := range c.C {
 		lifetime := now.Sub(v.createdAt)
 		if lifetime > ttl {
-			delete(c.c, k)
+			delete(c.C, k)
 		}
 	}
 }

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jming514/pokedex-go/internal/pokeapi"
-	"github.com/jming514/pokedex-go/internal/pokecache"
 )
 
 type cliCommand struct {
@@ -18,7 +17,7 @@ type cliCommand struct {
 }
 
 type config struct {
-	pokeapiClient   pokeapi.Client
+	pokeapiClient   *pokeapi.Client
 	nextLocationURL *string
 	prevLocationURL *string
 }
@@ -33,12 +32,12 @@ func getCommands() map[string]cliCommand {
 		"map": {
 			name:        "map",
 			description: "move forward maps",
-			callback:    commandMap,
+			callback:    cfg.commandMap,
 		},
 		"mapb": {
 			name:        "mapb",
 			description: "move backward maps",
-			callback:    nil,
+			callback:    cfg.commandMapb,
 		},
 		"explore": {
 			name:        "explore",
@@ -50,13 +49,20 @@ func getCommands() map[string]cliCommand {
 			description: "list all the commands",
 			callback:    commandHelp,
 		},
+		"dc": {
+			name:        "cd",
+			description: "debug cache",
+			callback:    cfg.commandDebugCache,
+		},
 	}
 }
 
-var pokeCache = cache.NewCache(5 * time.Minute)
+var cfg = config{}
 
 func startRepl() {
 	reader := bufio.NewScanner(os.Stdin)
+	fv := pokeapi.NewClient(5 * time.Minute)
+	cfg.pokeapiClient = &fv
 	for {
 		fmt.Printf("Pokedex > ")
 		reader.Scan()
@@ -81,4 +87,14 @@ func cleanInput(text string) []string {
 	lowered := strings.ToLower(trimmed)
 	output := strings.Fields(lowered)
 	return output
+}
+
+func printResults(input []struct {
+	Name string
+	URL  string
+},
+) {
+	for _, v := range input {
+		fmt.Printf("%s\n", v.Name)
+	}
 }
