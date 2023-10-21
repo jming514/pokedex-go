@@ -42,7 +42,7 @@ func getCommands() map[string]cliCommand {
 		"explore": {
 			name:        "explore",
 			description: "does nothing right now",
-			callback:    nil,
+			callback:    cfg.commandExplore,
 		},
 		"help": {
 			name:        "help",
