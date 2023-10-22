@@ -9,38 +9,41 @@ import (
 	"github.com/jming514/pokedex-go/internal/pokeapi"
 )
 
-func (cfg *config) commandMap() error {
-	// check cache
-	// check config if there is a Next already
-	// if there is a Next, then use it
-	// if not, then use the default locationUrl
-	// save Next after fetching
-	// save to cache
-
+func (cfg *config) commandMap(_ ...string) error {
 	queryUrl := locationUrl
 	if cfg.nextLocationURL != nil {
 		queryUrl = *cfg.nextLocationURL
 	}
-
-	res, err := http.Get(queryUrl)
-	if err != nil {
-		log.Printf("error fetching location data: %v", err)
-		return err
-	}
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Printf("error reading res.body: %v", err)
-		return err
-	}
-	defer res.Body.Close()
-
+	cachedData, bool := cfg.pokeapiClient.C.Get(queryUrl)
 	data := pokeapi.PokedexLocation{}
 
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		log.Printf("error unmarshalling location data: %v", err)
-		return err
+	if !bool {
+		res, err := http.Get(queryUrl)
+		if err != nil {
+			log.Printf("error fetching location data: %v\n", err)
+			return err
+		}
+
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			log.Printf("error reading res.body: %v\n", err)
+			return err
+		}
+		defer res.Body.Close()
+
+		err = json.Unmarshal(body, &data)
+		if err != nil {
+			log.Printf("error unmarshalling location data: %v\n", err)
+			return err
+		}
+
+		cfg.pokeapiClient.C.Add(queryUrl, body)
+	} else {
+		err := json.Unmarshal(cachedData, &data)
+		if err != nil {
+			log.Printf("error unmarshalling location data: %v\n", err)
+			return err
+		}
 	}
 
 	printResults(data.Results)
@@ -49,6 +52,5 @@ func (cfg *config) commandMap() error {
 	cfg.prevLocationURL = &data.Previous
 
 	// save to cache
-	cfg.pokeapiClient.C.Add(queryUrl, body)
 	return nil
 }

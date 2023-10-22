@@ -10,8 +10,10 @@ import (
 	"github.com/jming514/pokedex-go/internal/pokeapi"
 )
 
+type callbackType func(args ...string) error
+
 type cliCommand struct {
-	callback    func() error
+	callback    callbackType
 	name        string
 	description string
 }
@@ -61,18 +63,19 @@ var cfg = config{}
 
 func startRepl() {
 	reader := bufio.NewScanner(os.Stdin)
-	fv := pokeapi.NewClient(5 * time.Minute)
-	cfg.pokeapiClient = &fv
+	client := pokeapi.NewClient(5 * time.Minute)
+	cfg.pokeapiClient = &client
 	for {
 		fmt.Printf("Pokedex > ")
 		reader.Scan()
 
 		words := cleanInput(reader.Text())
 		commandName := words[0]
+		commandArgs := words[1:]
 
 		command, exists := getCommands()[commandName]
 		if exists {
-			_ = command.callback()
+			_ = command.callback(commandArgs...)
 		} else {
 			fmt.Println("Unrecognized command")
 			fmt.Println()

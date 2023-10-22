@@ -9,7 +9,7 @@ import (
 	"github.com/jming514/pokedex-go/internal/pokeapi"
 )
 
-func (cfg *config) commandMapb() error {
+func (cfg *config) commandMapb(_ ...string) error {
 	queryUrl := locationUrl
 	if cfg.prevLocationURL != nil {
 		queryUrl = *cfg.prevLocationURL

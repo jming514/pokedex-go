@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -47,6 +48,8 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 	if !ok {
 		return nil, false
 	}
+
+	fmt.Println("got from cache!")
 	return entry.val, true
 }
 
