@@ -14,10 +14,10 @@ func (cfg *config) commandMap(_ ...string) error {
 	if cfg.nextLocationURL != nil {
 		queryUrl = *cfg.nextLocationURL
 	}
-	cachedData, bool := cfg.pokeapiClient.C.Get(queryUrl)
+	cachedData, ok := cfg.pokeapiClient.C.Get(queryUrl)
 	data := pokeapi.PokedexLocation{}
 
-	if !bool {
+	if !ok {
 		res, err := http.Get(queryUrl)
 		if err != nil {
 			log.Printf("error fetching location data: %v\n", err)

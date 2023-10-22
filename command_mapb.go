@@ -14,26 +14,36 @@ func (cfg *config) commandMapb(_ ...string) error {
 	if cfg.prevLocationURL != nil {
 		queryUrl = *cfg.prevLocationURL
 	}
-
-	res, err := http.Get(queryUrl)
-	if err != nil {
-		log.Printf("error fetching location data: %v", err)
-		return err
-	}
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Printf("error reading res.body: %v", err)
-		return err
-	}
-	defer res.Body.Close()
-
+	cachedData, ok := cfg.pokeapiClient.C.Get(queryUrl)
 	data := pokeapi.PokedexLocation{}
 
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		log.Printf("error unmarshalling location data: %v", err)
-		return err
+	if !ok {
+		res, err := http.Get(queryUrl)
+		if err != nil {
+			log.Printf("error fetching location data: %v\n", err)
+			return err
+		}
+
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			log.Printf("error reading res.body: %v\n", err)
+			return err
+		}
+		defer res.Body.Close()
+
+		err = json.Unmarshal(body, &data)
+		if err != nil {
+			log.Printf("error unmarshalling location data: %v\n", err)
+			return err
+		}
+
+		cfg.pokeapiClient.C.Add(queryUrl, body)
+	} else {
+		err := json.Unmarshal(cachedData, &data)
+		if err != nil {
+			log.Printf("error unmarshalling location data: %v\n", err)
+			return err
+		}
 	}
 
 	printResults(data.Results)
@@ -41,6 +51,5 @@ func (cfg *config) commandMapb(_ ...string) error {
 	cfg.nextLocationURL = &data.Next
 	cfg.prevLocationURL = &data.Previous
 
-	cfg.pokeapiClient.C.Add(queryUrl, body)
 	return nil
 }

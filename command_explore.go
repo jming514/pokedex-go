@@ -28,39 +28,56 @@ func (cfg *config) commandExplore(args ...string) error {
 		return errors.New("no area specified")
 	}
 
-	exploreUrl := locationUrl + "-area/" + area
-	fmt.Println(exploreUrl)
-	res, err := http.Get(exploreUrl)
-	if err != nil {
-		log.Println("error fetching location data:", err)
-		return err
-	}
+	exploreUrl := locationUrl + "-area/" + area + "-area"
 
-	if strings.Contains(res.Status, "404") {
-		return errors.New(res.Status)
-	}
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Println("error reading res.body:", err)
-		return err
-	}
-	defer res.Body.Close()
-
+	cachedData, ok := cfg.pokeapiClient.C.Get(exploreUrl)
+	fmt.Println(ok)
 	data := exploreResponse{}
 
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		log.Println("error unmarshalling location data:", err)
-		return err
+	if !ok {
+		res, err := http.Get(exploreUrl)
+		if err != nil {
+			log.Println("error fetching location data:", err)
+			return err
+		}
+
+		if strings.Contains(res.Status, "404") {
+			log.Println("error location not found:", err)
+			return errors.New(res.Status)
+		}
+
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			log.Println("error reading res.body:", err)
+			return err
+		}
+		defer res.Body.Close()
+
+		err = json.Unmarshal(body, &data)
+		if err != nil {
+			log.Println("error unmarshalling location data:", err)
+			return err
+		}
+		fmt.Println("inside http section")
+
+		cfg.pokeapiClient.C.Add(exploreUrl, body)
+	} else {
+		err := json.Unmarshal(cachedData, &data)
+		if err != nil {
+			log.Println("error unmarshalling location data:", err)
+			return err
+		}
 	}
 
+	fmt.Println(data)
+
 	fmt.Println("Exploring", area+"...")
+	if len(data.PokemonEncounters) == 0 {
+		fmt.Println("No pokemon found...")
+	}
 	for _, v := range data.PokemonEncounters {
 		fmt.Println("-", v.Pokemon.Name)
 	}
-
-	cfg.pokeapiClient.C.Add(exploreUrl, body)
 
 	return nil
 }
