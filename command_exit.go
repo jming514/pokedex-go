@@ -2,7 +2,7 @@ package main
 
 import "os"
 
-func commandExitCli(args ...string) error {
+func commandExitCli(_ ...string) error {
 	os.Exit(3)
 	return nil
 }
