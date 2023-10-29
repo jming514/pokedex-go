@@ -22,11 +22,11 @@ type exploreResponse struct {
 }
 
 func (cfg *config) commandExplore(args ...string) error {
-	area := args[0]
-
-	if area == "" {
+	if len(args) == 0 || args[0] == "" {
 		return errors.New("no area specified")
 	}
+
+	area := args[0]
 
 	exploreUrl := locationUrl + "-area/" + area + "-area"
 
